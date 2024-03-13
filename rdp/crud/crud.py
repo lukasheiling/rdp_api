@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 
-from .model import Base, Value, ValueType
+from .model import Base, Value, ValueType, Device
 
 
 class Crud:
@@ -122,3 +122,76 @@ class Crud:
             logging.error(stmt)
 
             return session.scalars(stmt).all()
+    
+
+
+    def add_device(self, name: str, description: str = None) -> None:
+        """Fügt ein neues Gerät zur Datenbank hinzu.
+
+        Args:
+            name (str): Der Name des Geräts.
+            description (str, optional): Eine optionale Beschreibung des Geräts.
+        """
+        with Session(self._engine) as session:
+            new_device = Device(name=name, description=description)
+            session.add(new_device)
+            try:
+                session.commit()
+            except IntegrityError:
+                logging.error("Ein Fehler bei der Integritätsprüfung ist aufgetreten.")
+                session.rollback()
+                raise
+
+    def update_device(self, device_id: int, name: str = None, description: str = None) -> None:
+        """Aktualisiert ein vorhandenes Gerät in der Datenbank.
+
+        Args:
+            device_id (int): Die ID des zu aktualisierenden Geräts.
+            name (str, optional): Der neue Name des Geräts.
+            description (str, optional): Die neue Beschreibung des Geräts.
+        """
+        with Session(self._engine) as session:
+            device = session.query(Device).filter(Device.id == device_id).one()
+            if name is not None:
+                device.name = name
+            if description is not None:
+                device.description = description
+
+            try:
+                session.commit()
+            except IntegrityError:
+                logging.error("Ein Fehler bei der Integritätsprüfung ist aufgetreten.")
+                session.rollback()
+                raise
+
+    def get_device(self, device_id: int) -> Device:
+        """Ruft ein spezifisches Gerät ab.
+
+        Args:
+            device_id (int): Die ID des Geräts.
+
+        Returns:
+            Device: Das abgerufene Gerät.
+        """
+        with Session(self._engine) as session:
+            return session.query(Device).filter(Device.id == device_id).one()
+
+    def get_all_devices(self) -> List[Device]:
+        """Gibt alle Geräte zurück.
+
+        Returns:
+            List[Device]: Eine Liste von Geräten.
+        """
+        with Session(self._engine) as session:
+            return session.query(Device).all()
+
+    def delete_device(self, device_id: int) -> None:
+        """Löscht ein Gerät anhand seiner ID.
+
+        Args:
+            device_id (int): Die ID des zu löschenden Geräts.
+        """
+        with Session(self._engine) as session:
+            device = session.query(Device).filter(Device.id == device_id).one()
+            session.delete(device)
+            session.commit()

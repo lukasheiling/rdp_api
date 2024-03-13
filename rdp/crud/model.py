@@ -1,15 +1,23 @@
-from typing import List
-from typing import Optional
-from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy import String, Float, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
+from typing import List, Optional
+from sqlalchemy import UniqueConstraint
 
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.orm import sessionmaker
 
 
 class Base(DeclarativeBase):
     pass
 
+class Device(Base):
+    __tablename__ = "device"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=True)
+
+    values: Mapped[List["Value"]] = relationship("Value", back_populates="device", cascade="all, delete-orphan")  # jedes Gerät hat eigene Werte, Foreignkey in Value Tabelle auf device_id
+
+    def __repr__(self) -> str:
+        return f"Device(id={self.id!r}, name={self.name!r}, description={self.description!r})"
 
 class ValueType(Base):
     __tablename__ = "value_type"
@@ -18,12 +26,11 @@ class ValueType(Base):
     type_unit: Mapped[str]
 
     values: Mapped[List["Value"]] = relationship(
-        back_populates="value_type", cascade="all, delete-orphan"
+        "Value", back_populates="value_type", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
-        return f"ValueType(id={self.id!r}, value_type={self.type_name})"
-
+        return f"ValueType(id={self.id!r}, type_name={self.type_name!r}, type_unit={self.type_unit!r})"
 
 class Value(Base):
     __tablename__ = "value"
@@ -31,12 +38,15 @@ class Value(Base):
     time: Mapped[int] = mapped_column()
     value: Mapped[float] = mapped_column()
     value_type_id: Mapped[int] = mapped_column(ForeignKey("value_type.id"))
+    device_id: Mapped[int] = mapped_column(ForeignKey("device.id"), nullable=True)  # foreignkey auf device_id
 
-    value_type: Mapped["ValueType"] = relationship(back_populates="values")
+    value_type: Mapped["ValueType"] = relationship("ValueType", back_populates="values")
+    device: Mapped[Optional["Device"]] = relationship("Device", back_populates="values")
 
     __table_args__ = (
-        UniqueConstraint("time", "value_type_id", name="value integrity"),
+        UniqueConstraint("time", "value_type_id", "device_id", name="value integrity"),  # device_id hinzugefügt, um Eindeutigkeit zu gewährleisten
     )
 
     def __repr__(self) -> str:
-        return f"Value(id={self.id!r}, value_time={self.time!r} value_type={self.value_type.type_name!r}, value={self.value})"
+        return f"Value(id={self.id!r}, time={self.time!r}, value_type={self.value_type.type_name!r}, device_id={self.device_id!r}, value={self.value!r})"
+

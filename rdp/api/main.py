@@ -37,7 +37,7 @@ def read_type(id: int) -> ApiTypes.ValueType:
         id (int): primary key of the desired value type
 
     Raises:
-        HTTPException: Thrown if a value type with the given id cannot be accessed
+        HTTPException: Thrown it a value type with the given id cannot be accessed
 
     Returns:
         ApiTypes.ValueType: the desired value type 
@@ -51,7 +51,7 @@ def read_type(id: int) -> ApiTypes.ValueType:
 
 @app.put("/type/{id}/")
 def put_type(id, value_type: ApiTypes.ValueTypeNoID) -> ApiTypes.ValueType:
-    """PUT request to a special valuetype. This api call is used to change a value type object.
+    """PUT request to a specail valuetype. This api call is used to change a value type object.
 
     Args:
         id (int): primary key of the requested value type
@@ -102,13 +102,45 @@ async def startup_event() -> None:
     crud = Crud(engine)
     reader = Reader(crud)
     reader.start()
-    logger.debug("STARTUP: Sensor reader completed!")
+    logger.debug("STARTUP: Sensore reader completed!")
 
 @app.on_event("shutdown")
-async def shutdown_event():
+async def startup_event():
     """stop the character device reader
     """    
     global reader
     logger.debug("SHUTDOWN: Sensor reader!")
     reader.stop()
     logger.info("SHUTDOWN: Sensor reader completed!")
+
+
+@app.post("/device/", response_model=ApiTypes.Device)
+def create_device(device: ApiTypes.DeviceCreate):
+    """Endpoint zum Hinzufügen eines neuen Geräts"""
+    return crud.add_device(name=device.name, description=device.description)
+
+@app.get("/device/{device_id}", response_model=ApiTypes.Device)
+def get_device(device_id: int):
+    """Endpoint zum Abrufen eines spezifischen Geräts"""
+    try:
+        return crud.get_device(device_id=device_id)
+    except crud.NoResultFound:
+        raise HTTPException(status_code=404, detail="Gerät nicht gefunden")
+
+@app.put("/device/{device_id}", response_model=ApiTypes.Device)
+def update_device(device_id: int, device: ApiTypes.DeviceUpdate):
+    """Endpoint zum Aktualisieren eines spezifischen Geräts"""
+    try:
+        return crud.update_device(device_id=device_id, name=device.name, description=device.description)
+    except crud.NoResultFound:
+        raise HTTPException(status_code=404, detail="Gerät nicht gefunden")
+
+@app.delete("/device/{device_id}")
+def delete_device(device_id: int):
+    """Endpoint zum Löschen eines spezifischen Geräts"""
+    try:
+        crud.delete_device(device_id=device_id)
+        return {"detail": "Gerät erfolgreich gelöscht"}
+    except crud.NoResultFound:
+        raise HTTPException(status_code=404, detail="Gerät nicht gefunden")
+
