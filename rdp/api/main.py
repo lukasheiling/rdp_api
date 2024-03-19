@@ -1,4 +1,6 @@
 from typing import Union, List
+from random import shuffle
+
 
 from fastapi import FastAPI, HTTPException
 
@@ -143,4 +145,35 @@ def delete_device(device_id: int):
         return {"detail": "Gerät erfolgreich gelöscht"}
     except crud.NoResultFound:
         raise HTTPException(status_code=404, detail="Gerät nicht gefunden")
+
+@app.post("/assign-values/")
+async def assign_values() -> dict:
+    """Zufällige und gleichmäßige Zuordnung der Werte zu Geräten"""
+    try:
+        devices = crud.get_all_devices()
+        values = crud.get_values()  # Annahme: Diese Funktion akzeptiert keine Argumente und gibt alle Werte zurück
+        if not devices or not values:
+            raise HTTPException(status_code=404, detail="Devices or Values not found")
+
+        # Berechnung, wie viele Werte maximal pro Gerät zugeordnet werden können
+        values_per_device = len(values) // len(devices)
+        # Sicherstellen, dass Werte und Geräte zufällig gemischt werden
+        shuffle(values)
+
+        assignments = {device.name: [] for device in devices}
+        for value in values:
+            # Zufälliges Gerät auswählen und Wert zuweisen, bis das Limit erreicht ist
+            for device in devices:
+                if len(assignments[device.name]) < values_per_device:
+                    assignments[device.name].append(value.value)
+                    break  # Weiter zum nächsten Wert, sobald ein Gerät gefunden wurde
+
+        # Umwandlung der Listen in kommagetrennte Strings für eine übersichtlichere Ausgabe
+        for device_name in assignments:
+            assignments[device_name] = ', '.join(map(str, assignments[device_name]))
+
+        return {"assignments": assignments}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 

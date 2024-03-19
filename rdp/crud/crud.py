@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 
 from .model import Base, Value, ValueType, Device
+from random import shuffle
 
 
 class Crud:
@@ -99,15 +100,15 @@ class Crud:
     ) -> List[Value]:
         """Get Values from database.
 
-        The result can be filtered by the following paramater:
+        The result can be filtered by the following parameter:
 
         Args:
             value_type_id (int, optional): If set, only value of this given type will be returned. Defaults to None.
-            start (int, optional): If set, only values with a timestamp as least as big as start are returned. Defaults to None.
-            end (int, optional): If set, only values with a timestamp as most as big as end are returned. Defaults to None.
+            start (int, optional): If set, only values with a timestamp at least as big as start are returned. Defaults to None.
+            end (int, optional): If set, only values with a timestamp at most as big as end are returned. Defaults to None.
 
         Returns:
-            List[Value]: _description_
+            List[Value]: List of Value objects.
         """
         with Session(self._engine) as session:
             stmt = select(Value)
@@ -118,10 +119,8 @@ class Crud:
             if end is not None:
                 stmt = stmt.where(Value.time <= end)
             stmt = stmt.order_by(Value.time)
-            logging.error(start)
-            logging.error(stmt)
-
             return session.scalars(stmt).all()
+
     
 
 
@@ -195,3 +194,17 @@ class Crud:
             device = session.query(Device).filter(Device.id == device_id).one()
             session.delete(device)
             session.commit()
+
+    def get_values_by_device_id(self, device_id: int) -> List[Value]:
+        """Ruft alle Werte ab, die einem bestimmten Gerät zugeordnet sind.
+
+        Args:
+            device_id (int): Die ID des Geräts.
+
+        Returns:
+            List[Value]: Eine Liste von Wertobjekten, die dem Gerät zugeordnet sind.
+        """
+        with Session(self._engine) as session:
+            device = session.query(Device).filter(Device.id == device_id).one()
+            # Angenommen, es gibt eine Beziehung zwischen Device und Value über eine device_id in Value
+            return session.query(Value).filter(Value.device_id == device.id).all()
