@@ -1,26 +1,29 @@
 from pydantic import BaseModel
-from typing import Optional
-
+from typing import Optional, List
 
 class ValueTypeNoID(BaseModel):
-    type_name : str
-    type_unit : str
+    type_name: str
+    type_unit: str
 
 class ValueType(ValueTypeNoID):
-    id : int
+    id: int
 
 class ValueNoID(BaseModel):
     value_type_id: int
     time: int
-    value: float 
+    value: float
+    device_id: int
 
 class Value(ValueNoID):
     id: int
 
+    class Config:
+        orm_mode = True
+
 class ApiDescription(BaseModel):
-    description : str = "This is the Api"
-    value_type_link : str = "/type"
-    value_link : str = "/value"
+    description: str = "This is the Api"
+    value_type_link: str = "/type"
+    value_link: str = "/value"
 
 class DeviceBase(BaseModel):
     name: str
@@ -38,3 +41,8 @@ class Device(DeviceBase):
     class Config:
         orm_mode = True
 
+class DeviceWithValues(Device):
+    values: List[Value] = []
+
+    class Config:
+        orm_mode = True

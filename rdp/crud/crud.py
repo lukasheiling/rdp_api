@@ -52,25 +52,26 @@ class Crud:
             session.commit()
             return db_type
 
-    def add_value(self, value_time: int, value_type: int, value_value: float) -> None:
-        """Add a measurement point to the database.
+    def add_value(self, value_time: int, value_type: int, value_value: float, device_id: int = None) -> None:
+        """Add a measurement point to the database, associated with a device.
 
         Args:
-            value_time (int): unix time stamp of the value.
-            value_type (int): Valuetype id of the given value. 
+            value_time (int): Unix timestamp of the value.
+            value_type (int): ValueType id of the given value.
             value_value (float): The measurement value as float.
+            device_id (int, optional): ID of the device this value is associated with. Defaults to None.
         """        
         with Session(self._engine) as session:
-            stmt = select(ValueType).where(ValueType.id == value_type)
             db_type = self.add_or_update_value_type(value_type)
-            db_value = Value(time=value_time, value=value_value, value_type=db_type)
+            db_value = Value(time=value_time, value=value_value, value_type=db_type, device_id=device_id)
 
             session.add_all([db_type, db_value])
             try:
                 session.commit()
             except IntegrityError:
-                logging.error("Integrity")
+                logging.error("Integrity Error occurred")
                 raise
+
 
     def get_value_types(self) -> List[ValueType]:
         """Get all configured value types
@@ -124,22 +125,21 @@ class Crud:
     
 
 
-    def add_device(self, name: str, description: str = None) -> None:
+    def add_device(self, name: str, description: str = None) -> Device:
         """Fügt ein neues Gerät zur Datenbank hinzu.
-
-        Args:
-            name (str): Der Name des Geräts.
-            description (str, optional): Eine optionale Beschreibung des Geräts.
+        ...
         """
         with Session(self._engine) as session:
             new_device = Device(name=name, description=description)
             session.add(new_device)
             try:
                 session.commit()
+                return new_device  # Rückgabe des Device-Objekts nach dem Hinzufügen
             except IntegrityError:
                 logging.error("Ein Fehler bei der Integritätsprüfung ist aufgetreten.")
                 session.rollback()
                 raise
+
 
     def update_device(self, device_id: int, name: str = None, description: str = None) -> None:
         """Aktualisiert ein vorhandenes Gerät in der Datenbank.
@@ -195,16 +195,35 @@ class Crud:
             session.delete(device)
             session.commit()
 
-    def get_values_by_device_id(self, device_id: int) -> List[Value]:
-        """Ruft alle Werte ab, die einem bestimmten Gerät zugeordnet sind.
-
-        Args:
-            device_id (int): Die ID des Geräts.
+    def get_all_device_ids(self) -> List[int]:
+        """Retrieve all device IDs from the database.
 
         Returns:
-            List[Value]: Eine Liste von Wertobjekten, die dem Gerät zugeordnet sind.
+            List[int]: A list of all device IDs.
         """
         with Session(self._engine) as session:
-            device = session.query(Device).filter(Device.id == device_id).one()
-            # Angenommen, es gibt eine Beziehung zwischen Device und Value über eine device_id in Value
-            return session.query(Value).filter(Value.device_id == device.id).all()
+            return [device.id for device in session.query(Device.id).all()]
+
+    def get_devices_with_values(self):
+        with Session(self._engine) as session:
+            devices = session.query(Device).all()
+            device_list = []
+            for device in devices:
+                device_data = {
+                    "id": device.id,
+                    "name": device.name,
+                    "description": device.description,
+                    "values": [
+                        {
+                            "id": value.id,
+                            "time": value.time,
+                            "value": value.value,
+                            "value_type_id": value.value_type_id
+                        }
+                        for value in device.values
+                    ]
+                }
+                device_list.append(device_data)
+            return device_list
+
+

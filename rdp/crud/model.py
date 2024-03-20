@@ -44,7 +44,7 @@ class Value(Base):
     device: Mapped[Optional["Device"]] = relationship("Device", back_populates="values")
 
     __table_args__ = (
-        UniqueConstraint("time", "value_type_id", "device_id", name="value integrity"),  # device_id hinzugefügt, um Eindeutigkeit zu gewährleisten
+        UniqueConstraint("time", "value_type_id", "device_id", name="value integrity"),  # device_id hinzugefügt, für Unique
     )
 
     def __repr__(self) -> str:
