@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 
-from .model import Base, Value, ValueType, Device, Location
+from .model import Base, Value, ValueType, Location, Device
 from random import shuffle
 
 
@@ -121,3 +121,36 @@ class Crud:
                 stmt = stmt.where(Value.time <= end)
             stmt = stmt.order_by(Value.time)
             return session.scalars(stmt).all()
+
+    def create_location(self, name: str, location_id: int) -> Location:
+        with Session(self._engine) as session:
+            new_location = Location(name=name)
+            session.add(new_location)
+            session.commit()
+            session.refresh(new_location)
+            return new_location
+
+    def add_device(self, name: str, description: str, location_id: int) -> Device:
+        """Add a new device to the database.
+
+        Args:
+            name (str): The name of the device.
+            description (str): The description of the device.
+
+        Returns:
+            Device: The newly created Device object.
+        """
+        with Session(self._engine) as session:
+            new_device = Device(name=name, description=description, location_id=location_id)
+            session.add(new_device)
+            try:
+                session.commit()
+                device_id = new_device.id  
+                device_name = new_device.name  
+                device_description = new_device.description  
+                device_location_id = new_device.location_id
+            except IntegrityError:
+                logging.error("IntegrityError while adding a new device.")
+                session.rollback()
+                raise
+            return Device(id=device_id, name=device_name, description=device_description, location_id = location_id)

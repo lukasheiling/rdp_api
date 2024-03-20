@@ -37,15 +37,8 @@ class Device(DeviceBase):
     class Config:
         orm_mode = True
 
-class DeviceWithValues(Device):
-    values: List[Value] = []
-
-    class Config:
-        orm_mode = True
-
 class LocationNoID(BaseModel):
     name: str
-    device_id: int
 
 class Location(LocationNoID):
     id: int

@@ -114,3 +114,21 @@ async def shutdown_event():
     logger.debug("SHUTDOWN: Sensor reader!")
     reader.stop()
     logger.info("SHUTDOWN: Sensor reader completed!")
+
+
+@app.post("/create_location/", response_model=ApiTypes.Location)
+def create_location(location_data: ApiTypes.LocationNoID):
+    """Create a new location with the given name.
+
+    Args:
+        location_data (ApiTypes.LocationNoID): The name of the new location.
+
+    Returns:
+        ApiTypes.Location: The created location with its ID and name.
+    """
+    try:
+        new_location = crud.create_location(name=location_data.name)
+        return ApiTypes.Location(id=new_location.id, name=new_location.name)
+    except crud.IntegrityError as e:
+        logger.error(f"Failed to create a new location: {e}")
+        raise HTTPException(status_code=400, detail="Failed to create a new location due to a database error.")
