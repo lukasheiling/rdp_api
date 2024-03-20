@@ -23,7 +23,16 @@ class Reader:
             logger.error(f"Fehler beim Abrufen der Geräte-IDs: {e}")
             return []
 
+    def _get_all_location_ids(self):
+        """Hilfsfunktion, um alle Geräte-IDs zu erhalten."""
+        try:
+            return self._crud.get_all_location_ids()
+        except Exception as e:
+            logger.error(f"Fehler beim Abrufen der Location-IDs: {e}")
+            return []
+
     def start(self) -> None:
+        self._crud.create_location(name="testloc")
         self._crud.add_device(name="hehe", description="test")
         self._crud.add_device(name="looll", description="jkksks")
         self._thread = threading.Thread(target=self._run)

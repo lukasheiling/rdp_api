@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session
 
-from .model import Base, Value, ValueType, Device
+from .model import Base, Value, ValueType, Device, Location
 from random import shuffle
 
 
@@ -121,109 +121,3 @@ class Crud:
                 stmt = stmt.where(Value.time <= end)
             stmt = stmt.order_by(Value.time)
             return session.scalars(stmt).all()
-
-    
-
-
-    def add_device(self, name: str, description: str = None) -> Device:
-        """Fügt ein neues Gerät zur Datenbank hinzu.
-        ...
-        """
-        with Session(self._engine) as session:
-            new_device = Device(name=name, description=description)
-            session.add(new_device)
-            try:
-                session.commit()
-                return new_device  # Rückgabe des Device-Objekts nach dem Hinzufügen
-            except IntegrityError:
-                logging.error("Ein Fehler bei der Integritätsprüfung ist aufgetreten.")
-                session.rollback()
-                raise
-
-
-    def update_device(self, device_id: int, name: str = None, description: str = None) -> None:
-        """Aktualisiert ein vorhandenes Gerät in der Datenbank.
-
-        Args:
-            device_id (int): Die ID des zu aktualisierenden Geräts.
-            name (str, optional): Der neue Name des Geräts.
-            description (str, optional): Die neue Beschreibung des Geräts.
-        """
-        with Session(self._engine) as session:
-            device = session.query(Device).filter(Device.id == device_id).one()
-            if name is not None:
-                device.name = name
-            if description is not None:
-                device.description = description
-
-            try:
-                session.commit()
-            except IntegrityError:
-                logging.error("Ein Fehler bei der Integritätsprüfung ist aufgetreten.")
-                session.rollback()
-                raise
-
-    def get_device(self, device_id: int) -> Device:
-        """Ruft ein spezifisches Gerät ab.
-
-        Args:
-            device_id (int): Die ID des Geräts.
-
-        Returns:
-            Device: Das abgerufene Gerät.
-        """
-        with Session(self._engine) as session:
-            return session.query(Device).filter(Device.id == device_id).one()
-
-    def get_all_devices(self) -> List[Device]:
-        """Gibt alle Geräte zurück.
-
-        Returns:
-            List[Device]: Eine Liste von Geräten.
-        """
-        with Session(self._engine) as session:
-            return session.query(Device).all()
-
-    def delete_device(self, device_id: int) -> None:
-        """Löscht ein Gerät anhand seiner ID.
-
-        Args:
-            device_id (int): Die ID des zu löschenden Geräts.
-        """
-        with Session(self._engine) as session:
-            device = session.query(Device).filter(Device.id == device_id).one()
-            session.delete(device)
-            session.commit()
-
-    def get_all_device_ids(self) -> List[int]:
-        """Retrieve all device IDs from the database.
-
-        Returns:
-            List[int]: A list of all device IDs.
-        """
-        with Session(self._engine) as session:
-            return [device.id for device in session.query(Device.id).all()]
-
-    def get_devices_with_values(self):
-        with Session(self._engine) as session:
-            devices = session.query(Device).all()
-            device_list = []
-            for device in devices:
-                device_data = {
-                    "id": device.id,
-                    "name": device.name,
-                    "description": device.description,
-                    "values": [
-                        {
-                            "id": value.id,
-                            "time": value.time,
-                            "value": value.value,
-                            "value_type_id": value.value_type_id
-                        }
-                        for value in device.values
-                    ]
-                }
-                device_list.append(device_data)
-            return device_list
-
-

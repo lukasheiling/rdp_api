@@ -28,21 +28,27 @@ class ApiDescription(BaseModel):
 class DeviceBase(BaseModel):
     name: str
     description: Optional[str] = None
-
-class DeviceCreate(DeviceBase):
-    pass
-
-class DeviceUpdate(DeviceBase):
-    pass
+    location_id: Optional[int] = None
 
 class Device(DeviceBase):
     id: int
+
 
     class Config:
         orm_mode = True
 
 class DeviceWithValues(Device):
     values: List[Value] = []
+
+    class Config:
+        orm_mode = True
+
+class LocationNoID(BaseModel):
+    name: str
+    device_id: int
+
+class Location(LocationNoID):
+    id: int
 
     class Config:
         orm_mode = True
