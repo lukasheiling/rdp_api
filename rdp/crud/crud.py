@@ -122,13 +122,19 @@ class Crud:
             stmt = stmt.order_by(Value.time)
             return session.scalars(stmt).all()
 
-    def create_location(self, name: str, location_id: int) -> Location:
+    def create_location(self, name: str) -> Location:
         with Session(self._engine) as session:
             new_location = Location(name=name)
             session.add(new_location)
-            session.commit()
-            session.refresh(new_location)
-            return new_location
+            try:
+                session.commit()
+                session.refresh(new_location)
+                return new_location
+            except IntegrityError as e:
+                logging.error(f"Database error occurred while creating a new location: {e}")
+                session.rollback()
+                raise
+
 
     def add_device(self, name: str, description: str, location_id: int) -> Device:
         """Add a new device to the database.

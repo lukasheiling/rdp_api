@@ -119,7 +119,6 @@ async def shutdown_event():
 @app.post("/create_location/", response_model=ApiTypes.Location)
 def create_location(location_data: ApiTypes.LocationNoID):
     """Create a new location with the given name.
-
     Args:
         location_data (ApiTypes.LocationNoID): The name of the new location.
 

@@ -11,16 +11,15 @@ class Base(DeclarativeBase):
 class Device(Base):
     __tablename__ = "device"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=True)
     description: Mapped[str] = mapped_column(String, nullable=True)
-    location_id: Mapped[int] = mapped_column(ForeignKey("location.id"))
+    location_id: Mapped[int] = mapped_column(Integer, ForeignKey("location.id"))
 
     values: Mapped[List["Value"]] = relationship("Value", back_populates="device", cascade="all, delete-orphan")
-    location: Mapped[Optional["Location"]] = relationship("Location", back_populates="device", uselist=False)
+    location: Mapped[Optional["Location"]] = relationship("Location", back_populates="devices", foreign_keys=[location_id], uselist=False)
 
     def __repr__(self) -> str:
-        return f"Device(id={self.id!r}, name={self.name!r}, description={self.description!r})"
-
+        return f"Device(id={self.id!r}, name={self.name!r}, description={self.description!r}, , location_id={self.location_id!r})"
 
 class ValueType(Base):
     __tablename__ = "value_type"
@@ -57,7 +56,7 @@ class Value(Base):
 class Location(Base):
     __tablename__ = "location"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=True)
 
     devices: Mapped[List["Device"]] = relationship("Device", back_populates="location")
 
