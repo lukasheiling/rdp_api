@@ -45,3 +45,19 @@ class Location(LocationNoID):
 
     class Config:
         orm_mode = True
+
+class DeviceCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    location_id: Optional[int] = None
+
+class DeviceBase(BaseModel):
+    class Config:
+        from_attributes = True
+
+class Location(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True  # was orm_mode in previous versions

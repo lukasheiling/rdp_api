@@ -32,8 +32,8 @@ class Reader:
             return []
 
     def start(self) -> None:
-        self._crud.add_device(name="hehe", description="test", location_id=1)
-        self._crud.add_device(name="looll", description="jkksks", location_id=1)
+        self._crud.add_device(name="Device1", description="test", location_id=1)
+        self._crud.add_device(name="Device2", description="jkk", location_id=2)
         self._thread = threading.Thread(target=self._run)
         self._thread.start()
 

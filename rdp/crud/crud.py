@@ -160,3 +160,40 @@ class Crud:
                 session.rollback()
                 raise
             return Device(id=device_id, name=device_name, description=device_description, location_id = location_id)
+
+    def get_all_device_ids(self) -> List[int]:
+        """Ruft alle Geräte-IDs aus der Datenbank ab.
+
+        Returns:
+            List[int]: Eine Liste aller Geräte-IDs.
+        """
+        with Session(self._engine) as session:
+            stmt = select(Device.id)
+            device_ids = session.scalars(stmt).all()
+            return device_ids
+
+    def get_device(self, device_id: int) -> Device:
+        """Holt ein Gerät anhand seiner ID aus der Datenbank.
+
+        Args:
+            device_id (int): Die ID des gewünschten Geräts.
+
+        Returns:
+            Device: Das Gerät, wenn gefunden.
+        
+        Raises:
+            NoResultFound: Wenn kein Gerät mit der gegebenen ID gefunden wird.
+        """
+        with Session(self._engine) as session:
+            stmt = select(Device).where(Device.id == device_id)
+            device = session.scalars(stmt).one()
+            return device
+    
+    def get_all_locations(self) -> List[Location]:
+        """Fetch all locations from the database."""
+        with Session(self._engine) as session:
+            stmt = select(Location)
+            locations = session.scalars(stmt).all()
+            return locations
+
+

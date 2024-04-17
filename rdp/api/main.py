@@ -1,5 +1,6 @@
 from typing import Union, List
 from random import shuffle
+from .api_types import Device, DeviceCreate  # Make sure Device is imported
 
 
 from fastapi import FastAPI, HTTPException
@@ -131,3 +132,68 @@ def create_location(location_data: ApiTypes.LocationNoID):
     except crud.IntegrityError as e:
         logger.error(f"Failed to create a new location: {e}")
         raise HTTPException(status_code=400, detail="Failed to create a new location due to a database error.")
+
+
+@app.get("/device/{device_id}/", response_model=ApiTypes.Device)
+def get_device(device_id: int):
+    """API-Endpunkt, um ein Gerät anhand seiner ID zu holen.
+
+    Args:
+        device_id (int): Die ID des gewünschten Geräts.
+
+    Returns:
+        ApiTypes.Device: Die Details des Geräts, wenn gefunden.
+
+    Raises:
+        HTTPException: Wenn kein Gerät mit der angegebenen ID gefunden wird.
+    """
+    global crud
+    try:
+        device = crud.get_device(device_id)
+        return ApiTypes.Device(
+            id=device.id, 
+            name=device.name, 
+            description=device.description, 
+            location_id=device.location_id
+        )
+    except crud.NoResultFound:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+
+@app.get("/locations/", response_model=List[ApiTypes.Location])
+def read_locations():
+    """API-Endpunkt, um alle Locations zu erhalten.
+
+    Returns:
+        List[ApiTypes.Location]: Die Liste aller Locations.
+    """
+    try:
+        locations = crud.get_all_locations()
+        return [ApiTypes.Location.from_orm(location) for location in locations]
+    except Exception as e:
+        logger.error(f"Failed to fetch locations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch locations")
+
+
+
+@app.post("/devices/", response_model=Device)
+def create_device(device_data: DeviceCreate):
+    """Create a new device with the provided details.
+
+    Args:
+        device_data (DeviceCreate): The data needed to create a new device.
+
+    Returns:
+        Device: The created device with its ID and other details.
+    """
+    try:
+        new_device = crud.add_device(name=device_data.name, description=device_data.description, location_id=device_data.location_id)
+        return Device(
+            id=new_device.id,
+            name=new_device.name,
+            description=new_device.description,
+            location_id=new_device.location_id
+        )
+    except crud.IntegrityError as e:
+        logger.error(f"Failed to create a new device: {e}")
+        raise HTTPException(status_code=400, detail="Failed to create a new device due to a database error.")

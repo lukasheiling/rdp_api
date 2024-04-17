@@ -18,8 +18,12 @@ class Device(Base):
     values: Mapped[List["Value"]] = relationship("Value", back_populates="device", cascade="all, delete-orphan")
     location: Mapped[Optional["Location"]] = relationship("Location", back_populates="devices", foreign_keys=[location_id], uselist=False)
 
+    __table_args__ = (
+        UniqueConstraint("name", "description", "location_id", name="device integrity"),  # device_id hinzugefügt, für Unique
+    )
+
     def __repr__(self) -> str:
-        return f"Device(id={self.id!r}, name={self.name!r}, description={self.description!r}, , location_id={self.location_id!r})"
+        return f"Device(id={self.id!r}, name={self.name!r}, description={self.description!r}, location_id={self.location_id!r})"
 
 class ValueType(Base):
     __tablename__ = "value_type"
@@ -29,6 +33,10 @@ class ValueType(Base):
 
     values: Mapped[List["Value"]] = relationship(
         "Value", back_populates="value_type", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("type_name", "type_unit", name="ValueType integrity"),  # device_id hinzugefügt, für Unique
     )
 
     def __repr__(self) -> str:
@@ -59,6 +67,10 @@ class Location(Base):
     name: Mapped[str] = mapped_column(String, nullable=True)
 
     devices: Mapped[List["Device"]] = relationship("Device", back_populates="location")
+
+    __table_args__ = (
+        UniqueConstraint("name", name="location integrity"),  # device_id hinzugefügt, für Unique
+    )
 
     def __repr__(self) -> str:
         return f"Location(id={self.id!r}, name={self.name!r})"
