@@ -61,3 +61,9 @@ class Location(BaseModel):
 
     class Config:
         from_attributes = True  # was orm_mode in previous versions
+
+class ValueCreate(BaseModel):
+    value_time: int
+    value_type_id: int
+    value: float
+    device_id: Optional[int]
